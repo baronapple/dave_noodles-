@@ -196,6 +196,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--gray);color:var(--te
       </div>
       <div class="hright">
         <div class="uchip"><div class="uav" id="hAv"></div><span id="hName"></span></div>
+        <button class="lout" onclick="openPwdMo()">改密码</button>
         <button class="lout" onclick="doLogout()">退出</button>
       </div>
     </div>
@@ -291,6 +292,18 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--gray);color:var(--te
     <div class="fr"><label>登录用户名</label><input type="text" class="fi" id="sUser" placeholder="用于员工登录"></div>
     <div class="fr"><label>密码<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">（编辑时留空=不修改）</span></label><input type="password" class="fi" id="sPass" placeholder="设置密码"></div>
     <div class="ma"><button class="bs" onclick="cMo('staffMo')">取消</button><button class="bp" onclick="saveStaff()">保存</button></div>
+  </div>
+</div>
+
+
+<div class="mo" id="pwdMo" onclick="cMo('pwdMo')">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mt">修改密码</div>
+    <div class="fr"><label>当前密码</label><input type="password" class="fi" id="pwdOld" placeholder="输入当前密码"></div>
+    <div class="fr"><label>新密码</label><input type="password" class="fi" id="pwdNew" placeholder="输入新密码（至少4位）"></div>
+    <div class="fr"><label>确认新密码</label><input type="password" class="fi" id="pwdNew2" placeholder="再次输入新密码"></div>
+    <div class="lerr" id="pwdErr"></div>
+    <div class="ma"><button class="bs" onclick="cMo('pwdMo')">取消</button><button class="bp" id="pwdSaveBtn" onclick="savePassword()">保存</button></div>
   </div>
 </div>
 
@@ -832,6 +845,42 @@ async function submitReq(){
     document.getElementById('rSwap').value='';
     rMyReqList(); toast('申请已提交 ✓');
   } catch(e){ toast('提交失败'); console.error(e); }
+}
+
+
+// ── CHANGE PASSWORD ────────────────────────────────────────
+function openPwdMo() {
+  document.getElementById('pwdOld').value = '';
+  document.getElementById('pwdNew').value = '';
+  document.getElementById('pwdNew2').value = '';
+  document.getElementById('pwdErr').textContent = '';
+  document.getElementById('pwdMo').classList.add('open');
+}
+async function savePassword() {
+  const oldPwd = document.getElementById('pwdOld').value;
+  const newPwd = document.getElementById('pwdNew').value;
+  const newPwd2 = document.getElementById('pwdNew2').value;
+  const errEl = document.getElementById('pwdErr');
+  errEl.textContent = '';
+
+  if (!oldPwd || !newPwd || !newPwd2) { errEl.textContent = '请填写所有字段'; return; }
+  if (oldPwd !== CU.password) { errEl.textContent = '当前密码不正确'; return; }
+  if (newPwd.length < 4) { errEl.textContent = '新密码至少需要4位'; return; }
+  if (newPwd !== newPwd2) { errEl.textContent = '两次输入的新密码不一致'; return; }
+
+  const btn = document.getElementById('pwdSaveBtn');
+  btn.textContent = '保存中…'; btn.disabled = true;
+  try {
+    await sbFetch('staff?id=eq.' + CU.id, { method: 'PATCH', body: { password: newPwd } });
+    CU.password = newPwd; // update local session
+    cMo('pwdMo');
+    toast('密码已更新 ✓');
+  } catch(e) {
+    errEl.textContent = '保存失败，请重试';
+    console.error(e);
+  } finally {
+    btn.textContent = '保存'; btn.disabled = false;
+  }
 }
 
 // ── MODAL ─────────────────────────────────────────────────
