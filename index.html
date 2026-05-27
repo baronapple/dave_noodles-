@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>排班系统</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --teal:#1D9E75;--teal-l:#E1F5EE;--teal-d:#0F6E56;
+  --amber:#BA7517;--amber-l:#FAEEDA;
+  --coral:#D85A30;--coral-l:#FAECE7;
+  --gray:#F7F6F2;--border:#E2E0D8;--muted:#888780;
+  --text:#2C2C2A;--sub:#5F5E5A;--white:#fff;
+  --r:12px;--rs:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--gray);color:var(--text);min-height:100vh;}
+
+/* LOGIN */
+#loginScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.lbox{background:var(--white);border-radius:20px;border:1px solid var(--border);padding:36px 32px;width:100%;max-width:360px;}
+.llogo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+.ldot{width:36px;height:36px;background:var(--teal);border-radius:10px;display:flex;align-items:center;justify-content:center;}
+.ldot svg{width:20px;height:20px;fill:white;}
+.ltitle{font-size:20px;font-weight:700;color:var(--teal-d);}
+.lsub{font-size:13px;color:var(--muted);margin-bottom:22px;}
+.fl{margin-bottom:14px;}
+.fl label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:5px;}
+.fi{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;outline:none;transition:border .15s;}
+.fi:focus{border-color:var(--teal);}
+.lbtn{width:100%;padding:12px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:15px;font-weight:600;cursor:pointer;transition:background .15s;}
+.lbtn:hover{background:var(--teal-d);}
+.lerr{color:#c0392b;font-size:13px;margin-top:10px;text-align:center;min-height:18px;}
+.lhint{margin-top:20px;background:var(--gray);border-radius:var(--rs);padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.8;}
+.lhint strong{color:var(--sub);display:block;margin-bottom:2px;}
+
+/* APP */
+#app{display:none;}
+.header{background:var(--white);border-bottom:1px solid var(--border);padding:0 16px;position:sticky;top:0;z-index:100;}
+.hi{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px;}
+.logo{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:700;color:var(--teal-d);}
+.ldot2{width:28px;height:28px;background:var(--teal);border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.ldot2 svg{width:16px;height:16px;fill:white;}
+.ntabs{display:flex;}
+.ntab{padding:6px 13px;font-size:13px;font-weight:500;color:var(--sub);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;}
+.ntab.active{color:var(--teal);border-bottom-color:var(--teal);}
+.ntab:hover{color:var(--teal);}
+.hright{display:flex;align-items:center;gap:10px;}
+.uchip{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--sub);}
+.uav{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;}
+.lout{padding:5px 12px;background:none;border:1px solid var(--border);border-radius:16px;font-size:12px;color:var(--muted);cursor:pointer;}
+.lout:hover{border-color:var(--coral);color:var(--coral);}
+
+/* PAGES */
+.page{display:none;max-width:900px;margin:0 auto;padding:20px 16px 80px;}
+.page.active{display:block;}
+
+/* WEEK NAV */
+.wnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.wlabel{font-size:15px;font-weight:600;}
+.wbtns{display:flex;gap:8px;align-items:center;}
+.bico{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:17px;color:var(--sub);transition:all .15s;display:flex;align-items:center;justify-content:center;}
+.bico:hover{border-color:var(--teal);color:var(--teal);}
+.btod{height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:13px;font-weight:500;color:var(--sub);transition:all .15s;}
+.btod:hover{border-color:var(--teal);color:var(--teal);}
+.cpbtn{display:flex;align-items:center;gap:6px;background:var(--white);border:1px solid var(--border);padding:8px 14px;border-radius:20px;font-size:13px;color:var(--sub);cursor:pointer;transition:all .15s;font-weight:500;}
+.cpbtn:hover{border-color:var(--teal);color:var(--teal);}
+
+/* GRID - Outlook-style */
+.cal-wrap{display:flex;border-radius:var(--r);border:1px solid var(--border);overflow:hidden;background:var(--white);}
+.cal-time-col{flex-shrink:0;width:50px;background:var(--white);border-right:1px solid var(--border);}
+.cal-time-header{height:44px;border-bottom:1px solid var(--border);}
+.cal-time-slot{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:flex-end;padding:4px 6px 0 0;font-size:10px;color:var(--muted);}
+.cal-days{display:flex;flex:1;overflow-x:auto;min-width:0;}
+.cal-day-col{flex:1;min-width:36px;border-right:1px solid var(--border);display:flex;flex-direction:column;}
+.cal-day-col:last-child{border-right:none;}
+.cal-day-header{height:44px;border-bottom:1px solid var(--border);text-align:center;padding:5px 2px;flex-shrink:0;}
+.cal-day-header .dn{font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.4px;}
+.cal-day-header .dd{font-size:16px;font-weight:600;color:var(--text);line-height:1.3;}
+.cal-day-header.tod .dd{color:white;background:var(--teal);width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:13px;}
+.cal-body{position:relative;cursor:pointer;flex:1;}
+.cal-body:hover{background:rgba(29,158,117,.025);}
+.cal-hour-line{position:absolute;left:0;right:0;border-top:1px solid var(--border);pointer-events:none;}
+.cal-hour-line.half{border-top:1px dashed #ede;opacity:.6;}
+/* SHIFT CARD */
+.sc{position:absolute;border-radius:6px;padding:4px 6px;color:white;overflow:hidden;box-sizing:border-box;transition:opacity .15s;cursor:pointer;}
+.sc:hover{opacity:.85;z-index:10;}
+.sc .sn{font-size:10px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc .st{font-size:9px;opacity:.85;}
+.sc .sp{font-size:9px;background:rgba(255,255,255,.25);border-radius:3px;padding:1px 4px;display:inline-block;margin-top:1px;}
+.sc .db{position:absolute;top:2px;right:3px;width:15px;height:15px;background:rgba(255,255,255,.3);border:none;border-radius:50%;color:white;font-size:10px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;}
+.sc:hover .db{display:flex;}
+
+/* WAGE SUMMARY */
+.wrow{background:var(--white);border-radius:var(--r);border:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+
+/* STAFF */
+.stcard{background:var(--white);border-radius:var(--r);border:1px solid var(--border);padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+.sav{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0;}
+.wbadge{font-size:13px;color:var(--teal-d);font-weight:600;background:var(--teal-l);padding:3px 10px;border-radius:12px;white-space:nowrap;}
+.bedit{background:none;border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;color:var(--sub);}
+.bedit:hover{border-color:var(--teal);color:var(--teal);}
+.badd{width:100%;padding:12px;border:2px dashed var(--border);background:none;border-radius:var(--r);font-size:14px;color:var(--sub);cursor:pointer;transition:all .15s;margin-top:4px;}
+.badd:hover{border-color:var(--teal);color:var(--teal);background:var(--teal-l);}
+
+/* REQUESTS */
+.rcard{background:var(--white);border-radius:var(--r);border:1px solid var(--border);padding:14px 16px;margin-bottom:10px;}
+.rheader{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.rtag{font-size:11px;font-weight:600;padding:3px 10px;border-radius:10px;}
+.tl{background:var(--amber-l);color:var(--amber);}
+.ts{background:var(--coral-l);color:var(--coral);}
+.ract{display:flex;gap:8px;margin-top:12px;}
+.bapp{background:var(--teal);color:white;border:none;border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:500;}
+.bdec{background:none;color:var(--sub);border:1px solid var(--border);border-radius:8px;padding:7px 16px;font-size:13px;cursor:pointer;}
+.sbadge{font-size:11px;padding:3px 10px;border-radius:10px;font-weight:600;}
+.sok{background:var(--teal-l);color:var(--teal-d);}
+.sno{background:#fde8e8;color:#c0392b;}
+
+/* MY SCHEDULE */
+.mycard{background:var(--white);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;margin-bottom:16px;}
+.myhead{background:var(--teal);color:white;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.myrow{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.myrow:last-child{border-bottom:none;}
+.daybadge{width:36px;height:36px;background:var(--teal-l);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* FORM */
+.fbox{background:var(--white);border-radius:var(--r);border:1px solid var(--border);padding:16px;}
+.fr{margin-bottom:12px;}
+.fr label{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px;}
+.fsel{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-family:inherit;background:white;outline:none;}
+.bsub{width:100%;padding:12px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;}
+.bsub:hover{background:var(--teal-d);}
+
+/* MODAL */
+.mo{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none;align-items:center;justify-content:center;padding:16px;}
+.mo.open{display:flex;}
+.mbox{background:var(--white);border-radius:var(--r);padding:20px;width:100%;max-width:340px;}
+.mt{font-size:16px;font-weight:600;margin-bottom:16px;}
+.ma{display:flex;gap:8px;margin-top:16px;}
+.bp{flex:1;padding:10px;background:var(--teal);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;}
+.bs{flex:1;padding:10px;background:none;color:var(--sub);border:1px solid var(--border);border-radius:var(--rs);font-size:14px;cursor:pointer;}
+.wprev{font-size:13px;color:var(--teal-d);background:var(--teal-l);padding:8px 12px;border-radius:8px;margin-bottom:4px;min-height:36px;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--text);color:white;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:300;opacity:0;pointer-events:none;transition:opacity .2s;white-space:nowrap;}
+.toast.show{opacity:1;}
+
+.stitle{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:0 0 10px;}
+.rbadge{background:var(--coral);color:white;font-size:10px;padding:1px 5px;border-radius:8px;margin-left:4px;}
+.twocol{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+@media(max-width:580px){
+  .ntab{padding:6px 8px;font-size:12px;}
+  .lbox{padding:28px 20px;}
+  .sc .st,.sc .sp{display:none;}
+  .sc{padding:3px 4px;}
+  .tc{font-size:9px;padding:4px 3px 0 1px;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="lbox">
+    <div class="llogo">
+      <div class="ldot"><svg viewBox="0 0 16 16"><path d="M8 1C4.13 1 1 4.13 1 8s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 2c.9 0 1.75.22 2.5.6L3.6 10.5A4.97 4.97 0 0 1 3 8c0-2.76 2.24-5 5-5zm0 10c-.9 0-1.75-.22-2.5-.6l6.9-6.9c.38.75.6 1.6.6 2.5 0 2.76-2.24 5-5 5z"/></svg></div>
+      <span class="ltitle">排班系统</span>
+    </div>
+    <p class="lsub">请登录以查看排班</p>
+    <div class="fl"><label>用户名</label><input type="text" class="fi" id="lUser" placeholder="输入用户名" autocomplete="username"></div>
+    <div class="fl"><label>密码</label><input type="password" class="fi" id="lPass" placeholder="输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="lbtn" id="lBtn" onclick="doLogin()">登录</button>
+    <div class="lerr" id="lErr"></div>
+
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <div class="hi">
+      <div class="logo">
+        <div class="ldot2"><svg viewBox="0 0 16 16"><path d="M8 1C4.13 1 1 4.13 1 8s3.13 7 7 7 7-3.13 7-7-3.13-7-7-7zm0 2c.9 0 1.75.22 2.5.6L3.6 10.5A4.97 4.97 0 0 1 3 8c0-2.76 2.24-5 5-5zm0 10c-.9 0-1.75-.22-2.5-.6l6.9-6.9c.38.75.6 1.6.6 2.5 0 2.76-2.24 5-5 5z"/></svg></div>
+        排班系统
+      </div>
+      <div class="ntabs" id="aNavi" style="display:none">
+        <button class="ntab active" onclick="showTab('schedule',this)">排班</button>
+        <button class="ntab" onclick="showTab('staff',this)">员工</button>
+        <button class="ntab" onclick="showTab('requests',this)">申请<span id="rBadge" class="rbadge" style="display:none"></span></button>
+      </div>
+      <div class="ntabs" id="eNavi" style="display:none">
+        <button class="ntab active" onclick="showTab('mySchedule',this)">我的班次</button>
+        <button class="ntab" onclick="showTab('myRequest',this)">申请</button>
+      </div>
+      <div class="hright">
+        <div class="uchip"><div class="uav" id="hAv"></div><span id="hName"></span></div>
+        <button class="lout" onclick="doLogout()">退出</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN: Schedule -->
+  <div class="page active" id="schedulePage">
+    <div class="wnav">
+      <div class="wlabel" id="wLabel">本周</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="cpbtn" onclick="copyLastWeek()">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="2"/><path d="M11 5V3a2 2 0 0 0-2-2H3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>
+          复制上周
+        </button>
+        <div class="wbtns">
+          <button class="bico" onclick="changeWeek(-1)">&#8249;</button>
+          <button class="btod" onclick="goToday()">今天</button>
+          <button class="bico" onclick="changeWeek(1)">&#8250;</button>
+        </div>
+      </div>
+    </div>
+    <div id="sGrid"></div>
+    <div style="margin-top:22px;"><p class="stitle">本周工资汇总</p><div id="wSummary"></div></div>
+  </div>
+
+  <!-- ADMIN: Staff -->
+  <div class="page" id="staffPage">
+    <p class="stitle" style="margin-bottom:12px">员工管理</p>
+    <div id="staffList"></div>
+    <button class="badd" onclick="openAddStaff()">＋ 添加员工</button>
+  </div>
+
+  <!-- ADMIN: Requests -->
+  <div class="page" id="requestsPage">
+    <p class="stitle" style="margin-bottom:12px">换班 / 请假申请</p>
+    <div id="reqList"></div>
+  </div>
+
+  <!-- EMP: My Schedule -->
+  <div class="page" id="mySchedulePage">
+    <div class="wnav">
+      <div class="wlabel" id="eWLabel">本周</div>
+      <div class="wbtns">
+        <button class="bico" onclick="changeEmpWeek(-1)">&#8249;</button>
+        <button class="btod" onclick="goEmpToday()">今天</button>
+        <button class="bico" onclick="changeEmpWeek(1)">&#8250;</button>
+      </div>
+    </div>
+    <div id="mySchContent"></div>
+  </div>
+
+  <!-- EMP: Request -->
+  <div class="page" id="myRequestPage">
+    <p class="stitle" style="margin-bottom:12px">提交申请</p>
+    <div class="fbox">
+      <div class="fr"><label>申请类型</label>
+        <select class="fsel" id="rType" onchange="document.getElementById('swapRow').style.display=this.value==='swap'?'block':'none'">
+          <option value="leave">请假</option>
+          <option value="swap">换班</option>
+        </select>
+      </div>
+      <div class="fr"><label>日期</label><input type="date" class="fi" id="rDate"></div>
+      <div class="fr" id="swapRow" style="display:none"><label>换班对象</label><input type="text" class="fi" id="rSwap" placeholder="对方姓名"></div>
+      <div class="fr"><label>备注（可选）</label><textarea class="fi" id="rNote" rows="2" placeholder="说明原因"></textarea></div>
+      <button class="bsub" onclick="submitReq()">提交申请</button>
+    </div>
+    <div style="margin-top:20px;"><p class="stitle" style="margin-bottom:10px">我的申请记录</p><div id="myRList"></div></div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="mo" id="shiftMo" onclick="cMo('shiftMo')">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mt" id="shiftMoT">添加班次</div>
+    <input type="hidden" id="shiftDate">
+    <div class="fr"><label>员工</label><select class="fsel" id="shiftEmp" onchange="prevWage()"></select></div>
+    <div class="twocol fr">
+      <div><label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px">开始</label><input type="time" class="fi" id="shiftS" value="09:00" oninput="prevWage()"></div>
+      <div><label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px">结束</label><input type="time" class="fi" id="shiftE" value="17:00" oninput="prevWage()"></div>
+    </div>
+    <div class="wprev" id="wPrev"></div>
+    <div class="ma"><button class="bs" onclick="cMo('shiftMo')">取消</button><button class="bp" onclick="saveShift()">保存</button></div>
+  </div>
+</div>
+
+<div class="mo" id="staffMo" onclick="cMo('staffMo')">
+  <div class="mbox" onclick="event.stopPropagation()">
+    <div class="mt" id="staffMoT">添加员工</div>
+    <input type="hidden" id="sId">
+    <div class="fr"><label>姓名</label><input type="text" class="fi" id="sName" placeholder="员工姓名"></div>
+    <div class="fr"><label>职位</label><input type="text" class="fi" id="sRole" placeholder="例：服务员、厨师"></div>
+    <div class="twocol fr"><div><label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px">平日时薪（$）</label><input type="number" class="fi" id="sWage" placeholder="25" min="0" step="0.5"></div><div><label style="display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:4px">周末时薪（$）</label><input type="number" class="fi" id="sWageWE" placeholder="30" min="0" step="0.5"></div></div>
+    <div class="fr"><label>登录用户名</label><input type="text" class="fi" id="sUser" placeholder="用于员工登录"></div>
+    <div class="fr"><label>密码<span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:4px">（编辑时留空=不修改）</span></label><input type="password" class="fi" id="sPass" placeholder="设置密码"></div>
+    <div class="ma"><button class="bs" onclick="cMo('staffMo')">取消</button><button class="bp" onclick="saveStaff()">保存</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  SUPABASE CONFIG  ← 填入你的 Project URL 和 anon key
+// ══════════════════════════════════════════════════════════
+const SB_URL = 'https://ggnrdfpskiyryqsmgnmd.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnbnJkZnBza2l5cnlxc21nbm1kIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4NTQ2OTksImV4cCI6MjA5NTQzMDY5OX0.xgaDGo0lUf3-hCb_ZsBHJWeMgn26vJx4OrqWqlGdTTs';
+
+async function sbFetch(path, opts={}) {
+  const res = await fetch(SB_URL + '/rest/v1/' + path, {
+    headers: {
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer || '',
+      ...opts.headers
+    },
+    method: opts.method || 'GET',
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(err);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ── STAFF ──────────────────────────────────────────────────
+async function gStaff() {
+  return await sbFetch('staff?order=id');
+}
+async function svStaff_add(emp) {
+  return await sbFetch('staff', { method:'POST', prefer:'return=representation', body: emp });
+}
+async function svStaff_update(id, emp) {
+  return await sbFetch('staff?id=eq.'+id, { method:'PATCH', prefer:'return=representation', body: emp });
+}
+
+// ── SHIFTS ─────────────────────────────────────────────────
+async function gShiftsForWeek(dates) {
+  // dates: array of 'YYYY-MM-DD' strings
+  const filter = dates.map(d=>'date.eq.'+d).join(',');
+  const rows = await sbFetch('shifts?or=('+filter+')&order=date,start_time');
+  // Convert to {dateKey: [{employeeId, start, end, id}]} format
+  const map = {};
+  for (const r of rows) {
+    if (!map[r.date]) map[r.date] = [];
+    map[r.date].push({ id: r.id, employeeId: r.employee_id, start: r.start_time, end: r.end_time });
+  }
+  return map;
+}
+async function addShift(dateK, empId, start, end) {
+  return await sbFetch('shifts', {
+    method:'POST', prefer:'return=representation',
+    body: { date: dateK, employee_id: empId, start_time: start, end_time: end }
+  });
+}
+async function deleteShiftById(id) {
+  return await sbFetch('shifts?id=eq.'+id, { method:'DELETE' });
+}
+async function getShiftsForDateRange(startDate, endDate) {
+  const rows = await sbFetch('shifts?date=gte.'+startDate+'&date=lte.'+endDate+'&order=date,start_time');
+  const map = {};
+  for (const r of rows) {
+    if (!map[r.date]) map[r.date] = [];
+    map[r.date].push({ id: r.id, employeeId: r.employee_id, start: r.start_time, end: r.end_time });
+  }
+  return map;
+}
+
+// ── REQUESTS ───────────────────────────────────────────────
+async function gReqs() {
+  return await sbFetch('requests?order=created_at.desc');
+}
+async function addReq(req) {
+  return await sbFetch('requests', { method:'POST', prefer:'return=representation', body: req });
+}
+async function updateReqStatus(id, status) {
+  return await sbFetch('requests?id=eq.'+id, { method:'PATCH', body: { status } });
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+let CU = null;
+async function doLogin() {
+  const u = document.getElementById('lUser').value.trim();
+  const p = document.getElementById('lPass').value;
+  document.getElementById('lErr').textContent = '';
+  setLoading(true);
+  try {
+    if (u === 'admin') {
+      // Fetch admin record from staff table (role='admin')
+      const rows = await sbFetch('staff?username=eq.admin&select=*');
+      if (rows.length && rows[0].password === p) {
+        CU = { ...rows[0], role: 'admin' };
+        startApp(); return;
+      }
+    }
+    const rows = await sbFetch('staff?username=eq.'+encodeURIComponent(u)+'&select=*');
+    if (rows.length && rows[0].password === p) {
+      CU = { ...rows[0], role: 'employee' };
+      startApp(); return;
+    }
+    document.getElementById('lErr').textContent = '用户名或密码错误';
+  } catch(e) {
+    document.getElementById('lErr').textContent = '连接失败，请检查网络';
+    console.error(e);
+  } finally {
+    setLoading(false);
+  }
+}
+
+function setLoading(on) {
+  document.getElementById('lBtn').textContent = on ? '登录中…' : '登录';
+  document.getElementById('lBtn').disabled = on;
+}
+
+function doLogout() {
+  CU = null; wOff = 0; eOff = 0;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('lUser').value = '';
+  document.getElementById('lPass').value = '';
+}
+
+function startApp() {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const col = aColor(CU);
+  const av = document.getElementById('hAv');
+  av.style.background = col; av.textContent = ini(CU.name);
+  document.getElementById('hName').textContent = CU.name;
+  if (CU.role === 'admin') {
+    document.getElementById('aNavi').style.display = 'flex';
+    document.getElementById('eNavi').style.display = 'none';
+    document.querySelectorAll('#aNavi .ntab').forEach((t,i) => t.classList.toggle('active', i===0));
+    spDirect('schedule');
+  } else {
+    document.getElementById('aNavi').style.display = 'none';
+    document.getElementById('eNavi').style.display = 'flex';
+    document.querySelectorAll('#eNavi .ntab').forEach((t,i) => t.classList.toggle('active', i===0));
+    spDirect('mySchedule');
+  }
+}
+
+// ── NAV ───────────────────────────────────────────────────
+function showTab(id, el) {
+  if (el) { const p=el.closest('.ntabs'); p.querySelectorAll('.ntab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); }
+  spDirect(id);
+}
+function spDirect(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id+'Page').classList.add('active');
+  if (id==='schedule')   rSchedule();
+  if (id==='staff')      rStaff();
+  if (id==='requests')   rReqs_render();
+  if (id==='mySchedule') rMySchedule();
+  if (id==='myRequest')  rMyReqList();
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+const DN = ['一','二','三','四','五','六','日'];
+function getMon(off=0) {
+  const d=new Date(), dy=d.getDay(), diff=dy===0?-6:1-dy, m=new Date(d);
+  m.setDate(d.getDate()+diff+off*7); m.setHours(0,0,0,0); return m;
+}
+function dKey(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function isToday(d) { return dKey(d)===dKey(new Date()); }
+function calcH(s,e) { const[sh,sm]=s.split(':').map(Number),[eh,em]=e.split(':').map(Number); return ((eh*60+em)-(sh*60+sm))/60; }
+function fPay(h,w) { return '$'+(h*w).toFixed(2); }
+function getWage(emp,dateK) {
+  if (!emp) return 0;
+  const day=new Date(dateK+'T00:00:00').getDay();
+  return (day===0||day===6) ? (emp.wage_weekend||emp.wageWeekend||emp.wage) : emp.wage;
+}
+function ini(n) { return n.slice(0,2).toUpperCase(); }
+function aColor(emp) {
+  const c=['#1D9E75','#BA7517','#D85A30','#178ABF','#7F77DD','#3B6D11','#D9381E','#9B5DE5','#F15BB5','#00BBF9','#00F5D4','#EE9B00'];
+  if (!emp) return 'var(--teal)';
+  const idNum = Number(emp.id) || 0;
+  return c[idNum % c.length];
+}
+function toast(m) { const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function showGrid(on) { document.getElementById('sGrid').style.opacity = on ? '1' : '0.4'; }
+
+// ── SCHEDULE ──────────────────────────────────────────────
+let wOff=0;
+const HOUR_START=8, HOUR_END=23, SLOT_H=52;
+let _cachedShifts = {}; // cache for current week
+let _cachedStaff = [];
+
+function timeToMin(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function minToTop(m){return((m-HOUR_START*60)/60)*SLOT_H;}
+function durationToPx(s,e){return Math.max(((timeToMin(e)-timeToMin(s))/60)*SLOT_H-2,18);}
+
+function computeColumns(dayShifts){
+  const sorted=[...dayShifts].sort((a,b)=>timeToMin(a.start)-timeToMin(b.start));
+  const cols=[];
+  const result=new Map();
+  sorted.forEach(s=>{
+    const start=timeToMin(s.start),end=timeToMin(s.end);
+    let col=cols.findIndex(endT=>endT<=start);
+    if(col===-1){col=cols.length;cols.push(end);}
+    else cols[col]=end;
+    result.set(String(s.id),{col,totalCols:0});
+  });
+  sorted.forEach(s=>{
+    const sm=timeToMin(s.start),em=timeToMin(s.end);
+    let maxCol=result.get(String(s.id)).col;
+    sorted.forEach(s2=>{
+      if(s2.id===s.id)return;
+      if(timeToMin(s2.start)<em&&timeToMin(s2.end)>sm)
+        maxCol=Math.max(maxCol,result.get(String(s2.id)).col);
+    });
+    result.get(String(s.id)).totalCols=maxCol+1;
+  });
+  return result;
+}
+
+async function rSchedule() {
+  const mon=getMon(wOff);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
+  const end=days[6];
+  document.getElementById('wLabel').innerHTML=(wOff===0?'本周':wOff<0?'上周':'下周')+
+    ' <span style="font-size:13px;font-weight:400;color:var(--sub)">'+
+    (days[0].getMonth()+1)+'/'+days[0].getDate()+' – '+(end.getMonth()+1)+'/'+end.getDate()+'</span>';
+
+  showGrid(false);
+  try {
+    const [staff, shifts] = await Promise.all([
+      gStaff(),
+      getShiftsForDateRange(dKey(days[0]), dKey(days[6]))
+    ]);
+    _cachedStaff = staff;
+    _cachedShifts = shifts;
+    buildCalendarDOM(days, shifts, staff);
+    rWageSummary(days, shifts, staff);
+  } catch(e) {
+    toast('加载失败，请重试'); console.error(e);
+  } finally {
+    showGrid(true);
+  }
+}
+
+function buildCalendarDOM(days, shifts, staff) {
+  const grid=document.getElementById('sGrid');
+  grid.innerHTML='';
+  const wrap=document.createElement('div');wrap.className='cal-wrap';
+  const timeCol=document.createElement('div');timeCol.className='cal-time-col';
+  timeCol.appendChild(Object.assign(document.createElement('div'),{className:'cal-time-header'}));
+  for(let hr=HOUR_START;hr<HOUR_END;hr++){
+    const slot=document.createElement('div');slot.className='cal-time-slot';
+    slot.textContent=hr<12?hr+'am':hr===12?'12pm':(hr-12)+'pm';
+    timeCol.appendChild(slot);
+  }
+  wrap.appendChild(timeCol);
+  const daysDiv=document.createElement('div');daysDiv.className='cal-days';
+  days.forEach((d,i)=>{
+    const key=dKey(d);
+    const dayShifts=shifts[key]||[];
+    const colMap=computeColumns(dayShifts);
+    const dayCol=document.createElement('div');dayCol.className='cal-day-col';
+    const dh=document.createElement('div');dh.className='cal-day-header'+(isToday(d)?' tod':'');
+    dh.innerHTML='<div class="dn">'+DN[i]+'</div><div class="dd">'+d.getDate()+'</div>';
+    dayCol.appendChild(dh);
+    const body=document.createElement('div');body.className='cal-body';
+    const totalH=HOUR_END-HOUR_START;
+    body.style.height=(totalH*SLOT_H)+'px';
+    body.addEventListener('click',()=>openShiftMo(key));
+    for(let hr=0;hr<totalH;hr++){
+      const ln=document.createElement('div');ln.className='cal-hour-line';
+      ln.style.top=(hr*SLOT_H)+'px';body.appendChild(ln);
+      const half=document.createElement('div');half.className='cal-hour-line half';
+      half.style.top=(hr*SLOT_H+SLOT_H/2)+'px';body.appendChild(half);
+    }
+    dayShifts.forEach(s=>{
+      const emp=staff.find(e=>e.id===s.employeeId);
+      const h2=calcH(s.start,s.end);
+      const layout=colMap.get(String(s.id))||{col:0,totalCols:1};
+      const top=minToTop(timeToMin(s.start));
+      const height=durationToPx(s.start,s.end);
+      const wPct=100/layout.totalCols, lPct=layout.col*wPct, GAP=2;
+      const card=document.createElement('div');card.className='sc';
+      card.style.cssText='top:'+(top+1)+'px;height:'+height+'px;left:'+(lPct+GAP/2)+'%;width:'+(wPct-GAP)+'%;background:'+(emp?aColor(emp):'var(--teal)')+';';
+      card.innerHTML='<button class="db" onclick="delShift(\''+s.id+'\',event)">&#215;</button>'+
+        '<div class="sn">'+(emp?emp.name:'?')+'</div>'+
+        (height>30?'<div class="st">'+s.start+'&ndash;'+s.end+'</div>':'')+
+        (emp&&height>46?'<div class="sp">'+fPay(h2,getWage(emp,key))+'</div>':'');
+      body.appendChild(card);
+    });
+    dayCol.appendChild(body);
+    daysDiv.appendChild(dayCol);
+  });
+  wrap.appendChild(daysDiv);
+  grid.appendChild(wrap);
+}
+
+function rWageSummary(days, shifts, staff) {
+  const c=document.getElementById('wSummary');c.innerHTML='';
+  let any=false;
+  staff.forEach(emp=>{
+    let th=0,tp=0,cnt=0;
+    days.forEach(d=>{(shifts[dKey(d)]||[]).filter(s=>s.employeeId===emp.id).forEach(s=>{const h=calcH(s.start,s.end);th+=h;tp+=h*getWage(emp,dKey(d));cnt++;});});
+    if(!cnt)return;any=true;
+    const row=document.createElement('div');row.className='wrow';
+    const col=aColor(emp);
+    row.innerHTML='<div style="width:38px;height:38px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;flex-shrink:0">'+ini(emp.name)+'</div>'+
+      '<div style="flex:1"><div style="font-size:14px;font-weight:600">'+emp.name+'</div>'+
+      '<div style="font-size:12px;color:var(--sub)">'+cnt+'个班次 · '+th.toFixed(1)+'小时 · 平日$'+emp.wage+' 周末$'+(emp.wage_weekend||emp.wageWeekend||emp.wage)+'</div></div>'+
+      '<div style="text-align:right"><div style="font-size:18px;font-weight:700;color:var(--teal-d)">$'+tp.toFixed(2)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted)">本周应发</div></div>';
+    c.appendChild(row);
+  });
+  if(!any)c.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">本周暂无排班</div>';
+}
+
+function changeWeek(d){wOff+=d;rSchedule();}
+function goToday(){wOff=0;rSchedule();}
+
+async function copyLastWeek(){
+  const mon=getMon(wOff), prev=getMon(wOff-1);
+  const days=Array.from({length:7},(_,i)=>new Date(mon.getTime()+i*864e5));
+  const prevDays=Array.from({length:7},(_,i)=>new Date(prev.getTime()+i*864e5));
+  toast('正在复制…');
+  try {
+    const [prevShifts, currShifts] = await Promise.all([
+      getShiftsForDateRange(dKey(prevDays[0]),dKey(prevDays[6])),
+      getShiftsForDateRange(dKey(days[0]),dKey(days[6]))
+    ]);
+    let copied=0;
+    for(let i=0;i<7;i++){
+      const pk=dKey(prevDays[i]),ck=dKey(days[i]);
+      if(prevShifts[pk]&&prevShifts[pk].length&&(!currShifts[ck]||!currShifts[ck].length)){
+        for(const s of prevShifts[pk]){
+          await addShift(ck,s.employeeId,s.start,s.end);
+          copied++;
+        }
+      }
+    }
+    toast(copied?'已复制 '+copied+' 个班次 ✓':'上周为空或本周已有排班');
+    rSchedule();
+  } catch(e){ toast('复制失败'); console.error(e); }
+}
+
+// ── SHIFT MODAL ───────────────────────────────────────────
+function openShiftMo(dateK) {
+  const staff=_cachedStaff;
+  const sel=document.getElementById('shiftEmp');
+  sel.innerHTML=staff.map(e=>'<option value="'+e.id+'">'+e.name+'（$'+e.wage+'/h）</option>').join('');
+  document.getElementById('shiftDate').value=dateK;
+  document.getElementById('shiftMoT').textContent='添加班次 · '+dateK;
+  prevWage();
+  document.getElementById('shiftMo').classList.add('open');
+}
+function prevWage(){
+  const s=document.getElementById('shiftS').value,e=document.getElementById('shiftE').value;
+  const id=parseInt(document.getElementById('shiftEmp').value);
+  const emp=_cachedStaff.find(x=>x.id===id);
+  const prev=document.getElementById('wPrev');
+  if(!s||!e||!emp){prev.textContent='';return;}
+  const h=calcH(s,e);
+  const dateK2=document.getElementById('shiftDate').value;
+  const w2=getWage(emp,dateK2);
+  const isWE2=dateK2?(new Date(dateK2+'T00:00:00').getDay()===0||new Date(dateK2+'T00:00:00').getDay()===6):false;
+  prev.textContent=h>0?emp.name+'：'+h.toFixed(2)+'小时 × $'+w2+(isWE2?' (周末)':'')+' = '+fPay(h,w2):'请检查时间';
+}
+async function saveShift(){
+  const dateK=document.getElementById('shiftDate').value;
+  const empId=parseInt(document.getElementById('shiftEmp').value);
+  const s=document.getElementById('shiftS').value,e=document.getElementById('shiftE').value;
+  if(!s||!e||calcH(s,e)<=0){toast('请检查时间');return;}
+  try {
+    await addShift(dateK,empId,s,e);
+    cMo('shiftMo'); rSchedule(); toast('班次已添加 ✓');
+  } catch(err){ toast('保存失败'); console.error(err); }
+}
+async function delShift(sid, ev){
+  ev.stopPropagation();
+  try {
+    await deleteShiftById(sid);
+    rSchedule(); toast('已删除');
+  } catch(e){ toast('删除失败'); console.error(e); }
+}
+
+// ── STAFF ─────────────────────────────────────────────────
+async function rStaff(){
+  try {
+    const staff=await gStaff();
+    _cachedStaff=staff;
+    document.getElementById('staffList').innerHTML=staff.map(emp=>
+      '<div class="stcard">'+
+      '<div class="sav" style="background:'+aColor(emp)+'22;color:'+aColor(emp)+'">'+ini(emp.name)+'</div>'+
+      '<div style="flex:1"><div style="font-size:15px;font-weight:600">'+emp.name+'</div>'+
+      '<div style="font-size:12px;color:var(--sub)">'+emp.role+' · 账号：'+emp.username+'</div></div>'+
+      '<div class="wbadge">$'+emp.wage+' / $'+(emp.wage_weekend||emp.wageWeekend||emp.wage)+'/h</div>'+
+      '<button class="bedit" onclick="openEditStaff('+emp.id+')">编辑</button></div>'
+    ).join('');
+  } catch(e){ toast('加载失败'); console.error(e); }
+}
+function openAddStaff(){
+  ['sId','sName','sRole','sUser','sPass'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('sWage').value='';document.getElementById('sWageWE').value='';
+  document.getElementById('staffMoT').textContent='添加员工';
+  document.getElementById('staffMo').classList.add('open');
+}
+function openEditStaff(id){
+  const emp=_cachedStaff.find(e=>e.id===id);if(!emp)return;
+  document.getElementById('staffMoT').textContent='编辑员工';
+  document.getElementById('sId').value=id;
+  document.getElementById('sName').value=emp.name;
+  document.getElementById('sRole').value=emp.role;
+  document.getElementById('sWage').value=emp.wage;
+  document.getElementById('sWageWE').value=emp.wage_weekend||emp.wageWeekend||'';
+  document.getElementById('sUser').value=emp.username;
+  document.getElementById('sPass').value='';
+  document.getElementById('staffMo').classList.add('open');
+}
+async function saveStaff(){
+  const name=document.getElementById('sName').value.trim();
+  const role=document.getElementById('sRole').value.trim();
+  const wage=parseFloat(document.getElementById('sWage').value);
+  const wageWE=parseFloat(document.getElementById('sWageWE').value)||wage;
+  const uname=document.getElementById('sUser').value.trim();
+  const pass=document.getElementById('sPass').value;
+  if(!name||!wage||!uname){toast('请填写姓名、时薪、用户名');return;}
+  const id=document.getElementById('sId').value;
+  try {
+    if(id){
+      const patch={name,role,wage,wage_weekend:wageWE,username:uname};
+      if(pass)patch.password=pass;
+      await svStaff_update(parseInt(id),patch);
+    } else {
+      if(!pass){toast('新员工需要设置密码');return;}
+      await svStaff_add({name,role,wage,wage_weekend:wageWE,username:uname,password:pass,is_admin:false});
+    }
+    cMo('staffMo');rStaff();toast('已保存 ✓');
+  } catch(e){ toast('保存失败'); console.error(e); }
+}
+
+// ── REQUESTS (admin) ──────────────────────────────────────
+async function rReqs_render(){
+  try {
+    const reqs=await gReqs();
+    const pending=reqs.filter(r=>!r.status);
+    const badge=document.getElementById('rBadge');
+    badge.style.display=pending.length?'inline':'none';
+    if(pending.length)badge.textContent=pending.length;
+    const c=document.getElementById('reqList');
+    if(!reqs.length){c.innerHTML='<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">暂无申请</div>';return;}
+    c.innerHTML=reqs.map(r=>
+      '<div class="rcard">'+
+      '<div class="rheader">'+
+      '<span class="rtag '+(r.type==='leave'?'tl':'ts')+'">'+(r.type==='leave'?'请假':'换班')+'</span>'+
+      (r.status?'<span class="sbadge '+(r.status==='approved'?'sok':'sno')+'">'+(r.status==='approved'?'已批准':'已拒绝')+'</span>':'<span style="font-size:11px;color:var(--amber)">待处理</span>')+
+      '</div>'+
+      '<div style="font-size:14px;font-weight:600">'+r.employee_name+'</div>'+
+      '<div style="font-size:13px;color:var(--sub);margin-top:3px">'+r.date+(r.note?' · '+r.note:'')+(r.swap_target?' · 换班对象：'+r.swap_target:'')+'</div>'+
+      (!r.status?'<div class="ract"><button class="bapp" onclick="handleReq(\''+r.id+'\',\'approved\')">批准</button><button class="bdec" onclick="handleReq(\''+r.id+'\',\'declined\')">拒绝</button></div>':'')+
+      '</div>'
+    ).join('');
+  } catch(e){ toast('加载失败'); console.error(e); }
+}
+async function handleReq(id,status){
+  try {
+    await updateReqStatus(id,status);
+    rReqs_render(); toast(status==='approved'?'已批准 ✓':'已拒绝');
+  } catch(e){ toast('操作失败'); }
+}
+
+// ── MY SCHEDULE (employee) ────────────────────────────────
+let eOff=0;
+async function rMySchedule(){
+  const mon=getMon(eOff);
+  const days=Array.from({length:7},(_,i)=>{const d=new Date(mon);d.setDate(mon.getDate()+i);return d;});
+  const end=days[6];
+  document.getElementById('eWLabel').innerHTML=(eOff===0?'本周':eOff<0?'上周':'下周')+
+    ' <span style="font-size:13px;font-weight:400;color:var(--sub)">'+
+    (days[0].getMonth()+1)+'/'+days[0].getDate()+' – '+(end.getMonth()+1)+'/'+end.getDate()+'</span>';
+  try {
+    const shifts=await getShiftsForDateRange(dKey(days[0]),dKey(days[6]));
+    const emp=CU;
+    let th=0,tp=0,cnt=0;
+    const rows=days.map((d,i)=>{
+      const key=dKey(d),ms=(shifts[key]||[]).filter(s=>s.employeeId===emp.id);
+      if(!ms.length)return '<div class="myrow"><div class="daybadge"><div style="font-size:9px;color:var(--teal-d);font-weight:600">'+DN[i]+'</div><div style="font-size:14px;color:var(--teal-d);font-weight:700;line-height:1">'+d.getDate()+'</div></div><span style="font-size:13px;color:var(--muted);font-style:italic">休息</span></div>';
+      return ms.map(s=>{
+        const h=calcH(s.start,s.end);th+=h;tp+=h*getWage(emp,key);cnt++;
+        const tod=isToday(d);
+        return '<div class="myrow" style="'+(tod?'background:var(--teal-l);':'')+'">'+
+          '<div class="daybadge" style="'+(tod?'background:var(--teal);':'')+'">'+
+          '<div style="font-size:9px;font-weight:600;'+(tod?'color:rgba(255,255,255,.8)':'color:var(--teal-d)')+'">'+DN[i]+'</div>'+
+          '<div style="font-size:14px;font-weight:700;line-height:1;'+(tod?'color:white':'color:var(--teal-d)')+'">'+d.getDate()+'</div></div>'+
+          '<div style="flex:1"><div style="font-size:14px;font-weight:600">'+s.start+' – '+s.end+'</div>'+
+          '<div style="font-size:12px;color:var(--sub)">'+h.toFixed(1)+' 小时</div></div>'+
+          '<div style="font-size:14px;font-weight:700;color:var(--teal-d)">'+fPay(h,getWage(emp,key))+'</div></div>';
+      }).join('');
+    }).join('');
+    document.getElementById('mySchContent').innerHTML=
+      '<div class="mycard"><div class="myhead">'+
+      '<div><div style="font-size:15px;font-weight:600">'+emp.name+' 的排班</div>'+
+      '<div style="font-size:12px;opacity:.75;margin-top:2px">'+cnt+'个班次 · '+th.toFixed(1)+'小时</div></div>'+
+      '<div style="text-align:right"><div style="font-size:12px;opacity:.75">本周应发</div>'+
+      '<div style="font-size:22px;font-weight:700">$'+tp.toFixed(2)+'</div></div></div>'+
+      rows+'</div>';
+  } catch(e){ toast('加载失败'); console.error(e); }
+}
+function changeEmpWeek(d){eOff+=d;rMySchedule();}
+function goEmpToday(){eOff=0;rMySchedule();}
+
+// ── MY REQUESTS (employee) ────────────────────────────────
+async function rMyReqList(){
+  try {
+    const all=await gReqs();
+    const reqs=all.filter(r=>r.employee_id===CU.id);
+    const c=document.getElementById('myRList');
+    if(!reqs.length){c.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:14px">暂无申请记录</div>';return;}
+    c.innerHTML=reqs.map(r=>
+      '<div class="rcard" style="margin-bottom:8px">'+
+      '<div class="rheader"><span class="rtag '+(r.type==='leave'?'tl':'ts')+'">'+(r.type==='leave'?'请假':'换班')+'</span>'+
+      (r.status?'<span class="sbadge '+(r.status==='approved'?'sok':'sno')+'">'+(r.status==='approved'?'已批准':'已拒绝')+'</span>':'<span style="font-size:11px;color:var(--amber)">待处理</span>')+'</div>'+
+      '<div style="font-size:13px;color:var(--sub)">'+r.date+(r.note?' · '+r.note:'')+'</div></div>'
+    ).join('');
+  } catch(e){ toast('加载失败'); console.error(e); }
+}
+async function submitReq(){
+  const type=document.getElementById('rType').value;
+  const date=document.getElementById('rDate').value;
+  const note=document.getElementById('rNote').value.trim();
+  const swap=document.getElementById('rSwap').value.trim();
+  if(!date){toast('请选择日期');return;}
+  try {
+    await addReq({employee_id:CU.id,employee_name:CU.name,type,date,note,swap_target:swap,status:null});
+    document.getElementById('rDate').value='';
+    document.getElementById('rNote').value='';
+    document.getElementById('rSwap').value='';
+    rMyReqList(); toast('申请已提交 ✓');
+  } catch(e){ toast('提交失败'); console.error(e); }
+}
+
+// ── MODAL ─────────────────────────────────────────────────
+function cMo(id){document.getElementById(id).classList.remove('open');}
+</script>
+</body>
+</html>
